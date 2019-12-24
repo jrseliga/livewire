@@ -67,7 +67,22 @@ class Livewire {
         this.components.tearDownComponents()
     }
 
+    arrivalRequiresRefetch() {
+        return window.performance && window.performance.getEntries()[0].type === 'back_forward'
+        /* Firefox, Chrome, Edge, Opera, Firefox for Android, Chrome for Android, Android Browser, Opera Mobile
+        Reference: https://developer.mozilla.org/en-US/docs/Web/API/PerformanceNavigationTiming/type
+        Compatibility: https://developer.mozilla.org/en-US/docs/Web/API/PerformanceNavigationTiming/type#Browser_compatibility
+        CanIUse: https://caniuse.com/#feat=mdn-api_performancenavigationtiming_type
+        */
+    }
+
     start() {
+        /* Likely not the right place for this, just showing as example.  */
+        if (this.arrivalRequiresRefetch()) {
+            /* The user has arrived through the browser's history traversal operation.
+            So we can do new things to keep protected properties in Livewire for good. */
+        }
+
         DOM.rootComponentElementsWithNoParents().forEach(el => {
             this.components.addComponent(
                 new Component(el, this.connection)
