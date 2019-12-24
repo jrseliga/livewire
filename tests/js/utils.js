@@ -48,6 +48,7 @@ export function mountAsRootAndReturn(dom, returnedDom, dirtyInputs = [], request
                     data: {},
                     dirtyInputs: dirtyInputs,
                     dom: returnedDom,
+                    gc: payload.gc,
                 })
             }, 1)
         },
@@ -90,6 +91,7 @@ export function mountAndReturn(dom, returnedDom, dirtyInputs = [], requestInterc
                     data: {},
                     dirtyInputs: dirtyInputs,
                     dom: '<div wire:id="123">' + returnedDom + '</div>',
+                    gc: payload.gc,
                 })
             }, 1)
         },
@@ -115,6 +117,7 @@ export function mountAndReturnEmittedEvent(dom, event, requestInterceptor = asyn
                     id: payload.id,
                     data: {},
                     dom: '<div wire:id="123">' + dom + '</div>',
+                    gc: payload.gc,
                     eventQueue: [event],
                 })
             }, 1)
@@ -183,6 +186,7 @@ export function mountAndReturnWithData(dom, returnedDom, data, dirtyInputs = [])
                     data,
                     dirtyInputs,
                     dom: '<div wire:id="123">' + returnedDom + '</div>',
+                    gc: payload.gc,
                 })
             }, 1)
         },

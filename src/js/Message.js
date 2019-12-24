@@ -28,6 +28,7 @@ export default class {
                     payload: action.payload,
                 }
             }),
+            gc: store.getComponentsForCollection(),
         }
 
         if (Object.keys(this.component.errorBag).length > 0) {
@@ -48,6 +49,7 @@ export default class {
             events: payload.events,
             data: payload.data,
             redirectTo: payload.redirectTo,
+            gc: payload.gc,
             errorBag: payload.errorBag || {},
         }
     }

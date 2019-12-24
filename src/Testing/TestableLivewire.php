@@ -2,28 +2,42 @@
 
 namespace Livewire\Testing;
 
-use Illuminate\Support\Str;
 use Livewire\Livewire;
+use Illuminate\Support\Str;
 
 class TestableLivewire
 {
-    public $componentName;
-    public $id;
-    public $children;
-    public $checksum;
-    public $prefix;
-    public $dom;
-    public $data;
-    public $dirtyInputs;
-    public $events;
-    public $eventQueue;
-    public $errorBag;
-    public $redirectTo;
-    public $lastValidator;
-
-    use Concerns\HasFunLittleUtilities,
-        Concerns\MakesCallsToComponent,
+    use Concerns\HasFunLittleUtilities;
+    use
+        Concerns\MakesCallsToComponent;
+    use
         Concerns\MakesAssertions;
+
+    public $componentName;
+
+    public $id;
+
+    public $children;
+
+    public $checksum;
+
+    public $prefix;
+
+    public $dom;
+
+    public $data;
+
+    public $dirtyInputs;
+
+    public $events;
+
+    public $eventQueue;
+
+    public $errorBag;
+
+    public $redirectTo;
+
+    public $lastValidator;
 
     public function __construct($name, $prefix, $params = [])
     {
@@ -51,6 +65,7 @@ class TestableLivewire
         $this->eventQueue = $output->eventQueue;
         $this->errorBag = $output->errorBag;
         $this->checksum = $output->checksum;
+        $this->gc = [];
         $this->redirectTo = $output->redirectTo;
     }
 
@@ -68,6 +83,10 @@ class TestableLivewire
         $this->redirectTo = $output['redirectTo'];
         $this->eventQueue = $output['eventQueue'];
         $this->errorBag = $output['errorBag'] ?? [];
+
+        // Imitate the front-end clearing the garbage collector
+        // of ids that have already been garbage collected.
+        $this->gc = array_diff($this->gc, $output['gc']);
     }
 
     public function instance()

@@ -4,44 +4,41 @@ namespace Livewire;
 
 use Illuminate\Routing\Route;
 use Illuminate\Routing\Router;
+use Livewire\Commands\CpCommand;
+use Livewire\Commands\MvCommand;
+use Livewire\Commands\RmCommand;
 use Livewire\Macros\RouteMacros;
 use Livewire\Macros\RouterMacros;
+use Livewire\Commands\CopyCommand;
+use Livewire\Commands\MakeCommand;
+use Livewire\Commands\MoveCommand;
+use Livewire\Commands\StubCommand;
+use Livewire\Commands\TouchCommand;
+use Livewire\Commands\DeleteCommand;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Blade;
+use Livewire\Commands\ComponentParser;
+use Livewire\Commands\DiscoverCommand;
 use Illuminate\Support\ServiceProvider;
-use Livewire\LivewireViewCompilerEngine;
+use Livewire\Commands\MakeLivewireCommand;
 use Livewire\Connection\HttpConnectionHandler;
+use Livewire\HydrationMiddleware\ForwardPrefetch;
+use Livewire\HydrationMiddleware\PersistErrorBag;
 use Illuminate\Support\Facades\Route as RouteFacade;
+use Livewire\HydrationMiddleware\InterceptRedirects;
 use Illuminate\Foundation\Http\Middleware\TrimStrings;
+use Livewire\HydrationMiddleware\RegisterEmittedEvents;
+use Livewire\HydrationMiddleware\HydratePublicProperties;
+use Livewire\HydrationMiddleware\IncludeIdAsRootTagAttribute;
+use Livewire\HydrationMiddleware\SecureHydrationWithChecksum;
+use Livewire\HydrationMiddleware\RegisterEventsBeingListenedFor;
+use Livewire\HydrationMiddleware\HashPropertiesForDirtyDetection;
+use Livewire\HydrationMiddleware\HydratePreviouslyRenderedChildren;
 use Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull;
-use Livewire\Commands\{
-    ComponentParser,
-    CopyCommand,
-    CpCommand,
-    DeleteCommand,
-    DiscoverCommand,
-    MakeCommand,
-    MakeLivewireCommand,
-    MoveCommand,
-    MvCommand,
-    RmCommand,
-    StubCommand,
-    TouchCommand,
-};
-use Livewire\HydrationMiddleware\{
-    ClearFlashMessagesIfNotRedirectingAway,
-    ForwardPrefetch,
-    HashPropertiesForDirtyDetection,
-    HydratePreviouslyRenderedChildren,
-    HydratePublicProperties,
-    IncludeIdAsRootTagAttribute,
-    InterceptRedirects,
-    PersistErrorBag,
-    PrioritizeDataUpdatesBeforeActionCalls,
-    RegisterEmittedEvents,
-    RegisterEventsBeingListenedFor,
-    SecureHydrationWithChecksum,
-};
+use Livewire\HydrationMiddleware\ClearFlashMessagesIfNotRedirectingAway;
+use Livewire\HydrationMiddleware\PrioritizeDataUpdatesBeforeActionCalls;
+use Livewire\Experiments\CacheProtectedProperties\HydrationMiddleware\HydrateProtectedProperties;
+use Livewire\Experiments\CacheProtectedProperties\HydrationMiddleware\GarbageCollectUnusedComponents;
 
 class LivewireServiceProvider extends ServiceProvider
 {
@@ -86,7 +83,7 @@ class LivewireServiceProvider extends ServiceProvider
     public function registerViews()
     {
         // This is for Livewire's pagination views.
-        $this->loadViewsFrom(__DIR__.DIRECTORY_SEPARATOR.'views', config('livewire.view-path', 'livewire'));
+        $this->loadViewsFrom(__DIR__ . DIRECTORY_SEPARATOR . 'views', config('livewire.view-path', 'livewire'));
     }
 
     public function registerRoutes()
@@ -123,28 +120,10 @@ class LivewireServiceProvider extends ServiceProvider
         Router::mixin(new RouterMacros);
     }
 
-    protected function registerPublishables()
-    {
-        $this->publishesToGroups([
-            __DIR__.'/../config/livewire.php' => base_path('config/livewire.php'),
-        ], ['livewire', 'livewire:config']);
-
-        $this->publishesToGroups([
-            __DIR__.'/../dist' => public_path('vendor/livewire'),
-        ], ['livewire', 'livewire:assets']);
-    }
-
     public function registerBladeDirectives()
     {
         Blade::directive('livewireAssets', [LivewireBladeDirectives::class, 'livewireAssets']);
         Blade::directive('livewire', [LivewireBladeDirectives::class, 'livewire']);
-    }
-
-    protected function registerViewCompilerEngine()
-    {
-        $this->app->make('view.engine.resolver')->register('blade', function () {
-            return new LivewireViewCompilerEngine($this->app['blade.compiler']);
-        });
     }
 
     public function registerHydrationMiddleware()
@@ -158,6 +137,7 @@ class LivewireServiceProvider extends ServiceProvider
             [RegisterEventsBeingListenedFor::class, 'dehydrate'],
             [RegisterEmittedEvents::class, 'dehydrate'],
             [HydratePublicProperties::class, 'dehydrate'],
+            [HydrateProtectedProperties::class, 'dehydrate'],
             [HydratePreviouslyRenderedChildren::class, 'dehydrate'],
             [SecureHydrationWithChecksum::class, 'dehydrate'],
             [IncludeIdAsRootTagAttribute::class, 'dehydrate'],
@@ -165,6 +145,7 @@ class LivewireServiceProvider extends ServiceProvider
         ]);
 
         Livewire::registerHydrationMiddleware([
+            GarbageCollectUnusedComponents::class,
             IncludeIdAsRootTagAttribute::class,
             ClearFlashMessagesIfNotRedirectingAway::class,
             SecureHydrationWithChecksum::class,
@@ -178,6 +159,24 @@ class LivewireServiceProvider extends ServiceProvider
             PrioritizeDataUpdatesBeforeActionCalls::class,
             ForwardPrefetch::class,
         ]);
+    }
+
+    protected function registerPublishables()
+    {
+        $this->publishesToGroups([
+            __DIR__ . '/../config/livewire.php' => base_path('config/livewire.php'),
+        ], ['livewire', 'livewire:config']);
+
+        $this->publishesToGroups([
+            __DIR__ . '/../dist' => public_path('vendor/livewire'),
+        ], ['livewire', 'livewire:assets']);
+    }
+
+    protected function registerViewCompilerEngine()
+    {
+        $this->app->make('view.engine.resolver')->register('blade', function () {
+            return new LivewireViewCompilerEngine($this->app['blade.compiler']);
+        });
     }
 
     protected function bypassMiddleware(array $middlewareToExclude)
